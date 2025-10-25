@@ -18,7 +18,7 @@ public class JuegoGuerra {
     private ArrayList<Carta> mesa; 
     private Scanner scanner;
 
-    public static void main(String[] args) {
+   public static void main(String[] args) {
         
         JuegoGuerra miJuego = new JuegoGuerra();
         miJuego.jugar();
@@ -27,16 +27,16 @@ public class JuegoGuerra {
     public JuegoGuerra() {
         iniciarJuego();
     }
-
+    
     private void iniciarJuego() {
         System.out.println("--- ¡Bienvenido a La Guerra! ---");
         
-        mazo = new Mazo(); 
+        mazo = new Mazo();
         usuario = new Jugador("Usuario");
         pc = new Jugador("PC");
         mesa = new ArrayList<>();
         scanner = new Scanner(System.in);
-
+        
         for (int i = 0; i < 20; i++) {
             usuario.recibirCartaInicial(mazo.sacarCarta());
             pc.recibirCartaInicial(mazo.sacarCarta());
@@ -45,126 +45,141 @@ public class JuegoGuerra {
         System.out.println("Se han repartido las cartas. ¡Listos para empezar!");
     }
 
+
+   
     
     
     public void jugar() {
-        while (usuario.getCantidadCartasEnMano() > 0) {
-            siguienteTurno();
+        int turno = 1;       
+        while (usuario.tieneCartas() && pc.tieneCartas()) {
+            siguienteTurno(turno++); 
         }
         
         mostrarGanador();
     }
 
-    
-    private void siguienteTurno() {
-        System.out.println("\n--- Nuevo Turno ---");
-        System.out.println("Tus cartas ganadas: " + usuario.getCantidadCartasGanadas());
-        System.out.println("Cartas ganadas PC: " + pc.getCantidadCartasGanadas());
-        System.out.println("Te quedan " + usuario.getCantidadCartasEnMano() + " cartas en la mano.");
+    private void siguienteTurno(int turno) {
+        System.out.println("\n--- Turno " + turno + " ---");
+        
+        
+        System.out.println("Tus cartas (Total): " + usuario.getCantidadTotalCartas());
+        System.out.println("Cartas PC (Total): " + pc.getCantidadTotalCartas());
+        System.out.println("(Cartas en tu mano: " + usuario.getCantidadCartasEnMano() + ")");
+        
         System.out.print("Presiona [Enter] para jugar tu carta...");
-        scanner.nextLine(); // Espera la acción del usuario
-
+        scanner.nextLine();
         
         Carta cUsuario = usuario.jugarCarta();
         Carta cPC = pc.jugarCarta();
-
-      
-        if (cUsuario == null || cPC == null) {
-            return; // 
-        }
         
-        
-        mesa.clear(); 
+        mesa.clear();
         mesa.add(cUsuario);
         mesa.add(cPC);
 
-        
+        // 3. Se muestran las cartas
         System.out.println("Tú juegas: \t" + cUsuario);
         System.out.println("PC juega: \t" + cPC);
 
-        
+        // 4. Se comparan las cartas (Lógica sin cambios)
         if (cUsuario.getNumero() > cPC.getNumero()) {
-            
             System.out.println("¡Ganas la mano! Te llevas 2 cartas.");
             usuario.recibirCartasGanadas(mesa);
         } else if (cPC.getNumero() > cUsuario.getNumero()) {
-            
             System.out.println("PC gana la mano. Se lleva 2 cartas.");
             pc.recibirCartasGanadas(mesa);
         } else {
-            
             resolverGuerra();
         }
     }
     
-    
+    /**
+     * ¡¡¡ 3. MÉTODO MODIFICADO !!!
+     * Se llama en un empate. Ahora comprueba si los jugadores
+     * se quedan sin cartas DURANTE la guerra, al intentar jugar.
+     */
     private void resolverGuerra() {
         System.out.println("¡¡¡ G U E R R A !!!");
 
-       
-        
-        boolean usuarioPuedeGuerra = usuario.getCantidadCartasEnMano() >= 2;
-        boolean pcPuedeGuerra = pc.getCantidadCartasEnMano() >= 2;
+        // 1. Carta boca abajo
+        System.out.println("Ambos ponen 1 carta boca abajo...");
+        Carta cUsuarioBocaAbajo = usuario.jugarCarta();
+        Carta cPCBocaAbajo = pc.jugarCarta();
 
-        if (!usuarioPuedeGuerra && !pcPuedeGuerra) {
-            System.out.println("¡Ninguno puede ir a la guerra! Las cartas se descartan.");
-            mesa.clear(); 
+        // --- Chequeo de fin de juego (Boca Abajo) ---
+        // Si el usuario no pudo jugar (se quedó sin cartas)
+        if (cUsuarioBocaAbajo == null) {
+            System.out.println("¡No tienes cartas para la guerra! PC gana todo.");
+            if (cPCBocaAbajo != null) mesa.add(cPCBocaAbajo); // Añadir la carta que el PC sí jugó
+            pc.recibirCartasGanadas(mesa);
+            return; // Salir de la guerra (esto terminará el juego)
+        }
+        // Si el PC no pudo jugar
+        if (cPCBocaAbajo == null) {
+            System.out.println("¡PC no tiene cartas para la guerra! Ganas todo.");
+            mesa.add(cUsuarioBocaAbajo); // Añadir la carta que tú sí jugaste
+            usuario.recibirCartasGanadas(mesa);
             return;
         }
-        if (!usuarioPuedeGuerra) {
-            System.out.println("No tienes cartas suficientes para la guerra. ¡PC gana todo!");
+
+        // Si ambos pudieron, se añaden a la mesa
+        mesa.add(cUsuarioBocaAbajo);
+        mesa.add(cPCBocaAbajo);
+
+        // 2. Carta boca arriba
+        System.out.println("Y 1 carta boca arriba...");
+        Carta cUsuarioBocaArriba = usuario.jugarCarta();
+        Carta cPCBocaArriba = pc.jugarCarta();
+
+        // --- Chequeo de fin de juego (Boca Arriba) ---
+        if (cUsuarioBocaArriba == null) {
+            System.out.println("¡No tienes segunda carta para la guerra! PC gana todo.");
+            if (cPCBocaArriba != null) mesa.add(cPCBocaArriba);
             pc.recibirCartasGanadas(mesa);
             return;
         }
-        if (!pcPuedeGuerra) {
-            System.out.println("PC no tiene cartas suficientes para la guerra. ¡Ganas todo!");
+        if (cPCBocaArriba == null) {
+            System.out.println("¡PC no tiene segunda carta para la guerra! Ganas todo.");
+            mesa.add(cUsuarioBocaArriba);
             usuario.recibirCartasGanadas(mesa);
             return;
         }
-        
-        
-        
-        System.out.println("Ambos ponen 1 carta boca abajo...");
-        mesa.add(usuario.jugarCarta());
-        mesa.add(pc.jugarCarta());
 
+        // Si ambos pudieron, se añaden a la mesa
+        mesa.add(cUsuarioBocaArriba);
+        mesa.add(cPCBocaArriba);
         
-        System.out.println("Y 1 carta boca arriba...");
-        Carta cUsuario = usuario.jugarCarta();
-        Carta cPC = pc.jugarCarta();
+        System.out.println("Tú juegas (boca arriba): \t" + cUsuarioBocaArriba);
+        System.out.println("PC juega (boca arriba): \t" + cPCBocaArriba);
 
-        mesa.add(cUsuario);
-        mesa.add(cPC);
-
-        System.out.println("Tú juegas: \t" + cUsuario);
-        System.out.println("PC juega: \t" + cPC);
-
-        
-        if (cUsuario.getNumero() > cPC.getNumero()) {
+        // 3. Comparar de nuevo
+        if (cUsuarioBocaArriba.getNumero() > cPCBocaArriba.getNumero()) {
             System.out.println("¡Ganas la guerra! Te llevas " + mesa.size() + " cartas.");
             usuario.recibirCartasGanadas(mesa);
-        } else if (cPC.getNumero() > cUsuario.getNumero()) {
+        } else if (cPCBocaArriba.getNumero() > cUsuarioBocaArriba.getNumero()) {
             System.out.println("PC gana la guerra. Se lleva " + mesa.size() + " cartas.");
             pc.recibirCartasGanadas(mesa);
         } else {
-            
-            System.out.println("¡¡¡ OTRO EMPATE !!!");
-            resolverGuerra(); 
+            System.out.println("¡¡¡ OTRO EMPATE !!! La mesa acumula " + mesa.size() + " cartas.");
+            resolverGuerra(); // Se repite la lógica (Recursividad)
         }
     }
     
-   
+    /**
+     * ¡¡¡ 4. MÉTODO MODIFICADO !!!
+     * Se llama cuando el bucle 'jugar()' termina.
+     * El ganador es quien todavía tiene cartas.
+     */
     private void mostrarGanador() {
         System.out.println("\n--- ¡JUEGO TERMINADO! ---");
-        System.out.println("Se han jugado todas las cartas de la mano inicial.");
         
-        int cartasUsuario = usuario.getCantidadCartasGanadas();
-        int cartasPC = pc.getCantidadCartasGanadas();
+        int cartasUsuario = usuario.getCantidadTotalCartas();
+        int cartasPC = pc.getCantidadTotalCartas();
 
         System.out.println("Conteo final:");
         System.out.println("Cartas " + usuario.getNombre() + ": " + cartasUsuario);
         System.out.println("Cartas " + pc.getNombre() + ": " + cartasPC);
 
+        // El ganador es simplemente quien tiene más cartas (el otro tendrá 0)
         if (cartasUsuario > cartasPC) {
             System.out.println("\n¡¡¡ FELICIDADES, " + usuario.getNombre() + ", HAS GANADO !!! 🥳");
         } else if (cartasPC > cartasUsuario) {

@@ -5,6 +5,7 @@
 package juegoguerra;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.Queue;
 /**
@@ -27,9 +28,20 @@ public class Jugador {
     }
 
 
-    public Carta jugarCarta() {
-       
+   public Carta jugarCarta() {
+        reponerManoDesdeGanadas();       
         return this.mano.poll();
+    }
+   
+   private void reponerManoDesdeGanadas() {
+        
+        if (this.mano.isEmpty() && !this.ganadas.isEmpty()) {
+            
+            System.out.println("\n--- (" + this.nombre + " está barajando sus " + this.ganadas.size() + " cartas ganadas) ---");                        
+            Collections.shuffle(this.ganadas);            
+            this.mano.addAll(this.ganadas);      
+            this.ganadas.clear();
+        }
     }
 
     public void recibirCartaInicial(Carta carta) {
@@ -50,5 +62,13 @@ public class Jugador {
     
     public int getCantidadCartasGanadas() {
         return this.ganadas.size();
+    }
+    
+    public int getCantidadTotalCartas() {
+        return this.mano.size() + this.ganadas.size();
+    }
+        
+    public boolean tieneCartas() {
+        return !this.mano.isEmpty() || !this.ganadas.isEmpty();
     }
 }

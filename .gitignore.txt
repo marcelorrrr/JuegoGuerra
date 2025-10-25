@@ -1,0 +1,12 @@
+# Archivos compilados de Java
+*.class
+
+# Archivos de NetBeans que no deben compartirse
+/nbproject/private/
+/build/
+/dist/
+/nbbuild/
+/nbdist/
+
+# Archivos de configuración de usuario
+nb-configuration.xml
